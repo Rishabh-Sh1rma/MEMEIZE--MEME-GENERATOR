@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
           Create, customize, and share memes in seconds. The fastest way to go from idea to viral content.
         </p>
         <div className="flex space-x-4 mt-4 md:mt-0">
-          <a href="#" className="text-gray-400 hover:text-primary transition">
+          <a href="https://github.com/Rishabh-Sh1rma/MEMEIZE--MEME-GENERATOR" className="text-gray-400 hover:text-primary transition">
             <Github size={20} />
           </a>
           <a href="#" className="text-gray-400 hover:text-primary transition">

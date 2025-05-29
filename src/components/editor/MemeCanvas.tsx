@@ -13,6 +13,7 @@ import EmojiPicker from 'emoji-picker-react';
 const GOOGLE_FONTS = ['Anton', 'Arial', 'Comic Sans MS', 'Impact', 'Times New Roman'];
 
 const MemeCanvas: React.FC = () => {
+  const emojiPickerRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
   const urlFromQuery = urlParams.get('templateUrl');
@@ -99,12 +100,21 @@ const MemeCanvas: React.FC = () => {
   const loadImage = (url: string) => {
     fabric.Image.fromURL(url, (img) => {
       const canvas = fabricCanvasRef.current!;
-      canvas.clear();
-      canvas.setWidth(600);
-      canvas.setHeight(600);
-      const scale = Math.min(canvas.width! / img.width!, canvas.height! / img.height!);
-      img.set({ left: (canvas.width! - img.width! * scale) / 2, top: (canvas.height! - img.height! * scale) / 2, selectable: false, evented: false });
+      const containerWidth = canvasRef.current?.parentElement?.offsetWidth || window.innerWidth;
+      const canvasSize = Math.min(containerWidth, 600);
+      canvas.setWidth(canvasSize);
+      canvas.setHeight(canvasSize);
+
+      const scale = Math.min(canvasSize / img.width!, canvasSize / img.height!);
       img.scale(scale);
+      img.set({
+        left: (canvas.width! - img.width! * scale) / 2,
+        top: (canvas.height! - img.height! * scale) / 2,
+        selectable: false,
+        evented: false,
+      });
+
+      canvas.clear();
       canvas.add(img);
       canvas.sendToBack(img);
       canvas.renderAll();
@@ -115,9 +125,12 @@ const MemeCanvas: React.FC = () => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    const containerWidth = canvasRef.current.parentElement?.offsetWidth || window.innerWidth;
+    const canvasSize = Math.min(containerWidth, 600);
+
     fabricCanvasRef.current = new fabric.Canvas(canvasRef.current, {
-      width: 600,
-      height: 600,
+      width: canvasSize,
+      height: canvasSize,
       backgroundColor: '#f0f0f0',
       preserveObjectStacking: true,
     });
@@ -143,6 +156,20 @@ const MemeCanvas: React.FC = () => {
       canvas.dispose();
     };
   }, [imageUrl, blankCanvas]);
+
+  // Handle responsive resizing
+  useEffect(() => {
+    const handleResize = () => {
+      if (!canvasRef.current || !fabricCanvasRef.current) return;
+      const containerWidth = canvasRef.current.parentElement?.offsetWidth || window.innerWidth;
+      const canvasSize = Math.min(containerWidth, 600);
+      fabricCanvasRef.current.setWidth(canvasSize);
+      fabricCanvasRef.current.setHeight(canvasSize);
+      fabricCanvasRef.current.renderAll();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const addText = () => {
     if (!fabricCanvasRef.current) return;
@@ -229,6 +256,28 @@ const MemeCanvas: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      emojiPickerRef.current &&
+      !emojiPickerRef.current.contains(event.target as Node)
+    ) {
+      setShowEmojiPicker(false);
+    }
+  };
+
+  if (showEmojiPicker) {
+    document.addEventListener('mousedown', handleClickOutside);
+  } else {
+    document.removeEventListener('mousedown', handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, [showEmojiPicker]);
+
+
   return (
     <div className="flex flex-col w-full">
       <div className="bg-dark-800 p-4 rounded-t-lg border border-dark-700 flex flex-wrap justify-between gap-2">
@@ -272,23 +321,19 @@ const MemeCanvas: React.FC = () => {
       )}
 
       {showEmojiPicker && (
-        <div className="z-50 absolute mt-4 mx-auto left-0 right-0 max-w-md bg-white rounded shadow-md">
-          <EmojiPicker onEmojiClick={addEmoji} lazyLoadEmojis />
-        </div>
-      )}
+  <div
+    ref={emojiPickerRef}
+    className="z-50 absolute mt-4 mx-auto left-0 right-0 max-w-md bg-white rounded shadow-md"
+  >
+    <EmojiPicker onEmojiClick={addEmoji} lazyLoadEmojis />
+  </div>
+)}
 
       <div className="relative bg-dark-900 flex justify-center items-center p-4 sm:p-6 md:p-8 rounded-b-lg border-x border-b border-dark-700 overflow-x-auto">
-  <div
-    className="canvas-container shadow-xl"
-    style={{
-      width: '100%',
-      maxWidth: '600px',
-    }}
-  >
-    <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />
-  </div>
-</div>
-
+        <div className="canvas-container shadow-xl" style={{ width: '100%', maxWidth: '600px' }}>
+          <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />
+        </div>
+      </div>
 
       {showShareModal && <ShareModal onClose={() => setShowShareModal(false)} imageUrl={uploadedImageUrl} />}
     </div>

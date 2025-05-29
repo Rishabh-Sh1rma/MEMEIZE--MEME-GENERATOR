@@ -25,11 +25,7 @@ https://memeize-meme-generator.vercel.app/
 ![image](https://github.com/user-attachments/assets/64a5c637-0ed8-4474-98b7-ce68be219c0b)
 ![image](https://github.com/user-attachments/assets/89bc1477-0ac3-487d-af3e-91550402cabd)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> b36a999 (Initial commit - 1)
-```
 project
 ├─ .bolt
 │  ├─ config.json

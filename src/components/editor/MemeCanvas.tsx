@@ -1,18 +1,16 @@
-// src/components/editor/MemeCanvas.tsx
 import React, { useRef, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import WebFont from 'webfontloader';
 import { useLocation } from 'react-router-dom';
-import { MoveVertical, Move, Type, Image, Download, Share, Undo, Redo, ImagePlus } from 'lucide-react';
+import { MoveVertical, Move, Type, Image, Download, Share, Undo, Redo, ImagePlus, Smile } from 'lucide-react';
 import TextToolbar from './TextToolbar';
 import ShareModal from './ShareModal';
 import { useDropzone } from 'react-dropzone';
-
 import { supabase } from '../../lib/supabase';
 import { useUser } from '@supabase/auth-helpers-react';
+import EmojiPicker from 'emoji-picker-react';
 
 const GOOGLE_FONTS = ['Anton', 'Arial', 'Comic Sans MS', 'Impact', 'Times New Roman'];
-const STICKERS = ['/stickers/star.png', '/stickers/heart.png', '/stickers/thumbs-up.png'];
 
 const MemeCanvas: React.FC = () => {
   const location = useLocation();
@@ -30,6 +28,7 @@ const MemeCanvas: React.FC = () => {
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
   const [isUndoRedoBusy, setIsUndoRedoBusy] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const user = useUser();
 
@@ -172,14 +171,18 @@ const MemeCanvas: React.FC = () => {
     saveState();
   };
 
-  const addSticker = (src: string) => {
-    fabric.Image.fromURL(src, (img) => {
-      img.scaleToWidth(100);
-      img.set({ left: 250, top: 250 });
-      fabricCanvasRef.current!.add(img);
-      fabricCanvasRef.current!.renderAll();
-      saveState();
+  const addEmoji = (emojiObject: any) => {
+    if (!fabricCanvasRef.current) return;
+    const text = new fabric.Text(emojiObject.emoji, {
+      left: 250,
+      top: 250,
+      fontSize: 60,
+      selectable: true,
     });
+    fabricCanvasRef.current.add(text);
+    fabricCanvasRef.current.setActiveObject(text);
+    fabricCanvasRef.current.renderAll();
+    saveState();
   };
 
   const downloadMeme = () => {
@@ -228,8 +231,8 @@ const MemeCanvas: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="bg-dark-800 p-4 rounded-t-lg border border-dark-700 flex justify-between">
-        <div className="flex space-x-2">
+      <div className="bg-dark-800 p-4 rounded-t-lg border border-dark-700 flex flex-wrap justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={addText} className="p-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-md flex items-center">
             <Type size={20} className="mr-2" /> <span>Add Text</span>
           </button>
@@ -241,8 +244,11 @@ const MemeCanvas: React.FC = () => {
               <ImagePlus size={20} className="mr-2" /> <span>Upload Image(s)</span>
             </button>
           </div>
+          <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-md flex items-center">
+            <Smile size={20} className="mr-2" /> <span>Emojis</span>
+          </button>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={downloadMeme} className="p-2 bg-primary text-dark-900 rounded-md flex items-center hover:bg-primary-300 transition">
             <Download size={20} className="mr-2" /> <span>Download</span>
           </button>
@@ -265,17 +271,24 @@ const MemeCanvas: React.FC = () => {
         <TextToolbar activeObject={activeObject as fabric.Textbox} updateTextProperty={updateTextProperty} />
       )}
 
-      <div className="relative bg-dark-900 flex justify-center items-center p-8 rounded-b-lg border-x border-b border-dark-700">
-        <div className="canvas-container shadow-xl">
-          <canvas ref={canvasRef} />
+      {showEmojiPicker && (
+        <div className="z-50 absolute mt-4 mx-auto left-0 right-0 max-w-md bg-white rounded shadow-md">
+          <EmojiPicker onEmojiClick={addEmoji} lazyLoadEmojis />
         </div>
-      </div>
+      )}
 
-      <div className="mt-2 flex space-x-4 overflow-x-auto bg-dark-800 p-2 rounded-md">
-        {STICKERS.map((src) => (
-          <img key={src} src={src} alt="Sticker" onClick={() => addSticker(src)} className="h-16 w-16 object-contain cursor-pointer hover:scale-110 transition-transform rounded-md" draggable={false} loading="lazy" />
-        ))}
-      </div>
+      <div className="relative bg-dark-900 flex justify-center items-center p-4 sm:p-6 md:p-8 rounded-b-lg border-x border-b border-dark-700 overflow-x-auto">
+  <div
+    className="canvas-container shadow-xl"
+    style={{
+      width: '100%',
+      maxWidth: '600px',
+    }}
+  >
+    <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />
+  </div>
+</div>
+
 
       {showShareModal && <ShareModal onClose={() => setShowShareModal(false)} imageUrl={uploadedImageUrl} />}
     </div>

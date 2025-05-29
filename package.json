@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/auth-helpers-react": "^0.5.0",
     "@supabase/supabase-js": "^2.49.8",
+    "emoji-picker-react": "^4.12.2",
     "fabric": "^5.5.2",
     "html-to-image": "^1.11.11",
     "lucide-react": "^0.344.0",
